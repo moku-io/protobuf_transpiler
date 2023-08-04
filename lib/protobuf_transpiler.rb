@@ -12,7 +12,7 @@ module ProtobufTranspiler
       proto_paths = proto_files
                       .split.map { |p| p.sub %r{(?<=public).*}, '' }
                       .uniq.join ' '
-      out_path = "#{Rails.root}/app/stubs/"
+      out_path    = "#{Rails.root}/app/stubs/"
       FileUtils.mkdir_p out_path
       `grpc_tools_ruby_protoc --ruby_out=#{out_path} --grpc_out=#{out_path} #{proto_files} -I #{proto_paths}`
 
@@ -70,7 +70,7 @@ module ProtobufTranspiler
 
     private
 
-    ANNOTATE_DELIMITER = '===== Protobuf Annotation ====='
+    ANNOTATE_DELIMITER = '# ===== Protobuf Annotation ====='
 
     def class_annotations c
       c
@@ -92,11 +92,11 @@ module ProtobufTranspiler
       content     = content.join("\n").gsub(%r{^}, '# ')
       new_content = if old_content.match? ANNOTATE_DELIMITER
                       # replace annotation content
-                      old_content.sub %r{(?<=#{ANNOTATE_DELIMITER})(.|\n)*?(?=##{ANNOTATE_DELIMITER})}, "\n#{content}\n"
+                      old_content.sub %r{(?<=#{ANNOTATE_DELIMITER}\n)(.|\n)*?(?=\n#{ANNOTATE_DELIMITER})}, "\n#{content}\n"
                     else
                       # find first spot after comments
                       # add and fill annotation
-                      old_content.sub %r{^[^#]}, "\n# #{ANNOTATE_DELIMITER}\n#{content}\n# #{ANNOTATE_DELIMITER}\n\n"
+                      old_content.sub %r{^[^#]}, "\n#{ANNOTATE_DELIMITER}\n#{content}\n#{ANNOTATE_DELIMITER}\n\n"
                     end
       File.write file, new_content
     end

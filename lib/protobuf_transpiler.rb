@@ -52,6 +52,7 @@ module ProtobufTranspiler
       stubs_modules.each do |m|
         out                       = m
                                       .constants
+                                      .sort
                                       .map { |c| m.const_get c }
                                       .each_with_object({ messages: [], services: [] }) { |c, acc|
                                         if c.is_a? Class
@@ -79,11 +80,12 @@ module ProtobufTranspiler
         .join "\n"
     end
 
-    def module_annotations m
-      m
+    def module_annotations mod
+      mod
         .const_get('Service')
-        .rpc_descs.map { |_, d| "\t#{d.name}(#{d.input}): #{d.output}" }
-        .prepend("#{m.name}")
+        .rpc_descs.sort
+        .map { |_, d| "\t#{d.name}(#{d.input}): #{d.output}" }
+        .prepend(mod.name.to_s)
         .join "\n"
     end
 

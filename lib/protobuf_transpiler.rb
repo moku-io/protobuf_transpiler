@@ -102,3 +102,10 @@ module ProtobufTranspiler
     end
   end
 end
+
+class GRPC::RpcDesc::Stream
+
+  def to_s
+    "stream #{self.type.to_s}"
+  end
+end

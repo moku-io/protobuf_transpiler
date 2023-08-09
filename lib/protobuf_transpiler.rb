@@ -20,7 +20,7 @@ module ProtobufTranspiler
       unless keep_require
         Dir['app/stubs/**/*.rb'].each do |fp|
           f = File.read fp
-          File.write fp, (f.sub /\n(require.*?'\n)+/, '')
+          File.write fp, (f.sub %r{\n(require.*?'\n)+}, '')
         end
       end
 
@@ -30,7 +30,7 @@ module ProtobufTranspiler
         .each { |dir|
           requires = Dir.chdir dir do
             curr_dir = Dir.pwd.split('/').last
-            Dir['*.rb'].map { |s| "require_relative './#{curr_dir}/#{s.sub(/.rb$/, '')}'" }
+            Dir['*.rb'].map { |s| "require_relative './#{curr_dir}/#{s.sub %r{.rb$}, ''}'" }
           end
           File.write "#{dir}.rb", requires.join("\n")
         }
@@ -61,7 +61,7 @@ module ProtobufTranspiler
                                           acc[:services] << module_annotations(c)
                                         end
                                       }
-        types_file, services_file = Dir["app/stubs/#{m.name.downcase}/*.rb"]
+        types_file, services_file = Dir["app/stubs/#{m.name.underscore}/*.rb"]
                                       .sort_by { |s| s.scan('services').count }
         [types_file, services_file]
           .zip([out[:messages], out[:services]])
@@ -94,11 +94,11 @@ module ProtobufTranspiler
       content     = content.join("\n").gsub(%r{^}, '# ')
       new_content = if old_content.match? ANNOTATE_DELIMITER
                       # replace annotation content
-                      old_content.sub %r{(?<=#{ANNOTATE_DELIMITER}\n)(.|\n)*?(?=\n#{ANNOTATE_DELIMITER})}, "\n#{content}\n"
+                      old_content.sub %r{(?<=#{ANNOTATE_DELIMITER}\n)(.|\n)*?(?=\n#{ANNOTATE_DELIMITER})}, "\n#{content}"
                     else
                       # find first spot after comments
                       # add and fill annotation
-                      old_content.sub %r{^[^#]}, "\n#{ANNOTATE_DELIMITER}\n#{content}\n#{ANNOTATE_DELIMITER}\n\n"
+                      old_content.sub %r{^[^#]}, "\n#{ANNOTATE_DELIMITER}\n\n#{content}\n#{ANNOTATE_DELIMITER}\n\n"
                     end
       File.write file, new_content
     end
@@ -108,6 +108,19 @@ end
 class GRPC::RpcDesc::Stream
 
   def to_s
-    "stream #{self.type.to_s}"
+    "stream #{type}"
   end
 end
+
+monkey_patch_descriptor = Module.new do
+  def each_oneof(&)
+    return super if block_given?
+
+    Enumerator.new do |y|
+      super do |d|
+        y << d
+      end
+    end
+  end
+end
+Google::Protobuf::Descriptor.prepend monkey_patch_descriptor

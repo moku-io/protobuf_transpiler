@@ -73,11 +73,53 @@ module ProtobufTranspiler
 
     ANNOTATE_DELIMITER = '# ===== Protobuf Annotation ====='
 
-    def class_annotations c
-      c
-        .descriptor.entries.map { |d| "\t#{d.name}: #{d.type}" }
-        .prepend("#{c.name}")
-        .join "\n"
+    def class_annotations klass
+      oneof_fields, oneof_annotations = lambda do |descriptor|
+        [
+          descriptor.each_oneof
+                    .flat_map { |o| o.entries.map(&:name) },
+          descriptor.each_oneof
+                    .map { |o| ["#{o.name}:", o.entries.map { |e| "\t| #{e.name}: #{e.type}" }].join("\n") }
+                    .map { |s| s.gsub(%r{\t}, "\t\t").prepend("\t") + "\n" }
+        ]
+      end.call(klass.descriptor)
+
+      map_fields = lambda do |descriptor, instance|
+        descriptor.entries
+                  .map(&:name)
+                  .filter { |n| f = instance[n].class == Google::Protobuf::Map }
+      end.call(klass.descriptor, klass.new)
+
+      [
+        klass.name.to_s,
+        klass.constants(false).sort
+             .map { |msg| klass.const_get msg }
+             .map { |msg_class| class_annotations(msg_class) }
+             .map { |s| s.gsub(%r{\t}, "\t\t").prepend("\t") }
+             .prepend("\n"),
+        oneof_annotations,
+        klass.descriptor.entries
+             .filter_map { |d|
+               "\t#{d.name}: "+
+               type_handler(d, map_fields) unless oneof_fields.include? d.name
+             }
+             .join("\n"),
+        "\n"
+
+      ].join('')
+    end
+
+    def type_handler d, map_fields = []
+        case
+        when d.is_a?(Symbol)
+          d
+        when map_fields.include?(d.name)
+          d.subtype.entries.then { |k,v| "Map<#{k.type}, #{type_handler(v)}>" }
+        when d.type == :message
+          d.subtype.msgclass.then{|t| d.label == :repeated ? "[#{t}]" : t}
+        else
+          d.type.then{|t| d.label == :repeated ? "[#{t}]" : t}
+        end.to_s
     end
 
     def module_annotations mod

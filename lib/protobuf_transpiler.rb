@@ -99,9 +99,10 @@ module ProtobufTranspiler
              .prepend("\n"),
         oneof_annotations,
         klass.descriptor.entries
-             .filter_map { |d|
+             .reject{|d|oneof_fields.include? d.name}
+             .map { |d|
                "\t#{d.name}: "+
-               type_handler(d, map_fields) unless oneof_fields.include? d.name
+               type_handler(d, map_fields)
              }
              .join("\n"),
         "\n"

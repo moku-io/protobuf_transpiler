@@ -65,10 +65,10 @@ As stated in [generate](#generate) this task is executed automatically unless yo
 
 The annotations of messages follow these conventions:
 - each message is reported with its fully qualified name
-- messages' fields are indented in the lines following the message name and they are reported as `name: type`
-- repeated fields are annotated with their type enclosed by brackets (`[type]`)
-- map fields are annotated like this `Map<key_type, value_type>`
-- oneof fields are annotated with their wrapper name then each possible variant is placed on a new line, further indented and prepended with `| `.
+- fields are indented in the lines following the message name and are reported as `name: type`
+- `repeated` fields are annotated with their type enclosed in brackets (`[type]`)
+- `map` fields are annotated with angular brackets: `Map<key_type, value_type>`
+- `oneof` fields are annotated with their wrapper name, then each possible variant placed on a new line, further indented and prepended with `| `.
 
 Here's an example of annotations of some messages:
 ```

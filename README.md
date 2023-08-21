@@ -37,12 +37,12 @@ Finally, following the stubs generation, the task also creates a ruby file for a
 For example if you have a gem defining proto files with this structure:
 ```
  public
-    ├── mod1
-    │   └── sample1.proto
-    ├── mod2
-    │   └── sample2.proto
+ ├── mod1
+ │   └── sample1.proto
+ ├── mod2
+ │   └── sample2.proto
 ```
-you will get the follwing structure nested in `app/stubs`
+you will get the following structure nested in `app/stubs`:
 ```
 app/stubs
 ├── mod1
@@ -63,15 +63,26 @@ rake grpc_stubs:annotate
 ```
 As stated in [generate](#generate) this task is executed automatically unless you opt out after the generation step. Leveraging reflection, Messages and Services are inspected and a comment summary is prepended in the corresponding stub file.
 
+The annotations of messages follow these conventions:
+- each message is reported with its fully qualified name
+- messages' fields are indented in the lines following the message name and they are reported as `name: type`
+- repeated fields are annotated with their type enclosed by brackets (`[type]`)
+- map fields are annotated like this `Map<key_type, value_type>`
+- oneof fields are annotated with their wrapper name then each possible variant is placed on a new line, further indented and prepended with `| `.
+
 Here's an example of annotations of some messages:
 ```
 # ===== Protobuf Annotation =====
 # Test::GetJobReq
 # 	id: uint64
+#   some_oneof_wrapper:
+# 	  | alternative: string
+# 	  | another: uint64
 # Test::GetJobResp
 # 	id: uint64
 # 	name: string
 # 	surname: string
+#   notes: [string]
 # ===== Protobuf Annotation =====
 ```
 and some rpcs:
@@ -83,6 +94,7 @@ and some rpcs:
 # 	GetNew(Test::GetJobReq): Test::GetJobResp
 # ===== Protobuf Annotation =====
 ```
+
 
 ## Future extensions
 - Support nested messages definition

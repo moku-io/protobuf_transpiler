@@ -79,7 +79,7 @@ module ProtobufTranspiler
           descriptor.each_oneof
                     .flat_map { |o| o.entries.map(&:name) },
           descriptor.each_oneof
-                    .map { |o| ["#{o.name}:", o.entries.map { |e| "\t| #{e.name}: #{e.type}" }].join("\n") }
+                    .map { |o| ["#{o.name}:", o.entries.map { |e| "\t| #{e.name}: #{type_handler e}" }].join("\n") }
                     .map { |s| s.gsub(%r{\t}, "\t\t").prepend("\t") + "\n" }
         ]
       end.call(klass.descriptor)
@@ -87,7 +87,7 @@ module ProtobufTranspiler
       map_fields = lambda do |descriptor, instance|
         descriptor.entries
                   .map(&:name)
-                  .filter { |n| f = instance[n].class == Google::Protobuf::Map }
+                  .filter { |n| instance[n].class == Google::Protobuf::Map }
       end.call(klass.descriptor, klass.new)
 
       [

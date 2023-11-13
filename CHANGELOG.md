@@ -8,6 +8,10 @@
 ### Bug fixes
 )-->
 
+## 1.1.1 2023-11-13
+### Bug fixes
+- require google-protobuf where its monkey patch is made
+
 ## 1.1.0 2023-08-21
 ### New features
 - Add annotation support for:

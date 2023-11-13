@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "google/protobuf"
 require_relative "protobuf_transpiler/version"
 
 module ProtobufTranspiler

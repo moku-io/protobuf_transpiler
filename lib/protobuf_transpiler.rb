@@ -157,7 +157,7 @@ class GRPC::RpcDesc::Stream
 end
 
 monkey_patch_descriptor = Module.new do
-  def each_oneof(&)
+  def each_oneof(&block)
     return super if block_given?
 
     Enumerator.new do |y|

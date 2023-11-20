@@ -8,6 +8,10 @@
 ### Bug fixes
 )-->
 
+## 1.1.2 2023-11-20
+### Bug fixes
+- provide compatibility to ruby < 3.1
+
 ## 1.1.1 2023-11-13
 ### Bug fixes
 - require google-protobuf where its monkey patch is made

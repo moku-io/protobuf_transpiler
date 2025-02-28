@@ -32,5 +32,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'google-protobuf', '~> 3.23', '>= 3.23.3'
   spec.add_dependency 'grpc', '~> 1.56'
   spec.add_dependency 'grpc-tools', '~> 1.56'
-  spec.add_dependency 'rails', '~> 7.0', '>= 7.0.6'
+  spec.add_dependency 'rails'
 end

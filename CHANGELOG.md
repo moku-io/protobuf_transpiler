@@ -8,6 +8,9 @@
 ### Bug fixes
 )-->
 
+## 1.1.3 2025-02-28
+- remove rails versions constraints, keep only dependency
+
 ## 1.1.2 2023-11-20
 ### Bug fixes
 - provide compatibility to ruby < 3.1

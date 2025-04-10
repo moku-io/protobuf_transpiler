@@ -8,12 +8,18 @@
 ### Bug fixes
 )-->
 
+## 1.2.1 2025-04-10
+### Bug fixes
+- fixed NoMethodError that would happen when the module in which the stubs contained constants beyond the ones defined by the stubs
+
 ## 1.2.0 2025-04-10
+### New features
 - generate task can create an initializer that allows the generated stubs to work with zeitwerk
 - added possibility to specify stubs path for generate task
 - added possibility to specify stubs path for annotate task
 
 ## 1.1.3 2025-02-28
+### Bug fixes
 - remove rails versions constraints, keep only dependency
 
 ## 1.1.2 2023-11-20

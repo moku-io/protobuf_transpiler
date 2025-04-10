@@ -152,7 +152,7 @@ module ProtobufTranspiler
     def ignore_errors(*errors, &block)
       begin
         block.call
-      rescue errors
+      rescue *errors
         nil
       end
     end

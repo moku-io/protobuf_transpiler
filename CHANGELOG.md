@@ -7,6 +7,9 @@
 ### New features
 ### Bug fixes
 )-->
+## 1.2.2 2025-04-10
+### Bug fixes
+- exception from 1.2.1 version was not caught correctly
 
 ## 1.2.1 2025-04-10
 ### Bug fixes

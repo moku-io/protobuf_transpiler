@@ -8,6 +8,11 @@
 ### Bug fixes
 )-->
 
+## 1.2.0 2025-04-10
+- generate task can create an initializer that allows the generated stubs to work with zeitwerk
+- added possibility to specify stubs path for generate task
+- added possibility to specify stubs path for annotate task
+
 ## 1.1.3 2025-02-28
 - remove rails versions constraints, keep only dependency
 

@@ -7,26 +7,30 @@ module ProtobufTranspiler
   require_relative 'railtie'
 
   class << self
-    def generate_stubs(keep_require = false)
+    def generate_stubs(keep_require = false, path = 'app/stubs')
       paths       = $LOAD_PATH.map { |p| "#{p}/**/public/**/*.proto" }
       proto_files = Dir[*paths].join ' '
       proto_paths = proto_files
                       .split.map { |p| p.sub %r{(?<=public).*}, '' }
                       .uniq.join ' '
-      out_path    = "#{Rails.root}/app/stubs/"
+      out_path    = "#{Rails.root}/#{path}/"
       FileUtils.mkdir_p out_path
       `grpc_tools_ruby_protoc --ruby_out=#{out_path} --grpc_out=#{out_path} #{proto_files} -I #{proto_paths}`
 
       # remove possibly useless require from stub file
       unless keep_require
-        Dir['app/stubs/**/*.rb'].each do |fp|
+        Dir["#{path}/**/*.rb"].each do |fp|
           f = File.read fp
           File.write fp, (f.sub %r{\n(require.*?'\n)+}, '')
         end
       end
 
+      if path_in_app path
+        Rails.autoloaders.main.ignore "#{path}/**/*"
+      end
+
       # make zeitwerk happy
-      Dir['app/stubs/**']
+      Dir["#{path}/**"]
         .filter { |f| File.directory? f }
         .each { |dir|
           requires = Dir.chdir dir do
@@ -37,15 +41,15 @@ module ProtobufTranspiler
         }
     end
 
-    def annotate_stubs
+    def annotate_stubs path = 'app/stubs'
       require 'active_support/core_ext/string/inflections'
 
-      Dir['app/stubs/**/*.rb']
+      Dir["#{path}/**/*.rb"]
         .map { |s| File.absolute_path s }
-        .each { |f| require f }
+        .each { |f| zeitwerk_original_require f }
 
-      stubs_modules = Dir['app/stubs/*.rb']
-                        .map { |s| s.sub('app/stubs/', '') }
+      stubs_modules = Dir["#{path}/*.rb"]
+                        .map { |s| s.sub(path, '') }
                         .map { |s| s.sub '.rb', '' }
                         .uniq
                         .map { |c| Object.const_get c.camelize }
@@ -54,7 +58,8 @@ module ProtobufTranspiler
         out                       = m
                                       .constants
                                       .sort
-                                      .map { |c| m.const_get c }
+                                      .map { |c| ignore_errors(NameError) { m.const_get c } }
+                                      .filter(&:present?)
                                       .each_with_object({ messages: [], services: [] }) { |c, acc|
                                         if c.is_a? Class
                                           acc[:messages] << class_annotations(c)
@@ -62,7 +67,7 @@ module ProtobufTranspiler
                                           acc[:services] << module_annotations(c)
                                         end
                                       }
-        types_file, services_file = Dir["app/stubs/#{m.name.underscore}/*.rb"]
+        types_file, services_file = Dir["#{path}/#{m.name.underscore}/*.rb"]
                                       .sort_by { |s| s.scan('services').count }
         [types_file, services_file]
           .zip([out[:messages], out[:services]])
@@ -70,9 +75,29 @@ module ProtobufTranspiler
       end
     end
 
+    def generate_initializer stubs_path = 'app/stubs'
+      file_content = ''
+
+      if path_in_app stubs_path
+        # Ignore the path in zeitwerk
+        file_content += "Rails.autoloaders.main.ignore '#{stubs_path}/**/*'\n"
+      end
+
+      file_content += "Dir[\"\#{Rails.root}/#{stubs_path}/*\"].each { |f| require_relative f }\n"
+
+      File.write "#{Rails.root}/config/initializers/protobuf_transpiler.rb", file_content
+    end
+
     private
 
     ANNOTATE_DELIMITER = '# ===== Protobuf Annotation ====='
+
+    def path_in_app path
+      stubs_path = File.realdirpath path, Rails.root
+      app_folder = File.realdirpath 'app', Rails.root
+
+      stubs_path.start_with? app_folder
+    end
 
     def class_annotations klass
       oneof_fields, oneof_annotations = lambda do |descriptor|
@@ -124,13 +149,20 @@ module ProtobufTranspiler
         end.to_s
     end
 
+    def ignore_errors(*errors, &block)
+      begin
+        block.call
+      rescue errors
+        nil
+      end
+    end
+
     def module_annotations mod
-      mod
-        .const_get('Service')
-        .rpc_descs.sort
-        .map { |_, d| "\t#{d.name}(#{d.input}): #{d.output}" }
-        .prepend(mod.name.to_s)
-        .join "\n"
+      ignore_errors(NameError, NoMethodError) { mod.const_get('Service') }
+        &.sort
+        &.map { |_, d| "\t#{d.name}(#{d.input}): #{d.output}" }
+        &.prepend(mod.name.to_s)
+        &.join "\n"
     end
 
     def annotate_file file, content

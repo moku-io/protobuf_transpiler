@@ -158,7 +158,7 @@ module ProtobufTranspiler
     end
 
     def module_annotations mod
-      ignore_errors(NameError, NoMethodError) { mod.const_get('Service')&.sort }
+      ignore_errors(NameError, NoMethodError) { mod.const_get('Service')&.rpc_descs&.sort }
         &.map { |_, d| "\t#{d.name}(#{d.input}): #{d.output}" }
         &.prepend(mod.name.to_s)
         &.join "\n"
